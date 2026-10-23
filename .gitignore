@@ -1,0 +1,20 @@
+# 本机数据（每人一份，不进仓库）
+config.json
+state.json
+repo/
+backups/
+pending-switch.json
+switch-error.txt
+gui-*.txt
+
+# 构建产物
+dist/
+build/
+*.spec
+*.exe
+__pycache__/
+*.pyc
+
+# 临时
+_import_tmp/
+*.log
