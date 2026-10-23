@@ -279,10 +279,18 @@ def setup_wizard(parent) -> dict | None:
 
     old = core.load_cfg(required=False) or dict(core.DEFAULT_CONFIG)
     win = tk.Toplevel(parent)
-    win.title("第一次使用 · 填 6 项就好")
+    win.title("第一次使用 · 填这几项就好")
     win.configure(bg=C["bg"])
     win.geometry(f"{px(640)}x{px(430)}+{px(200)}+{px(140)}")
-    win.transient(parent)
+    # 注意：不要 transient + grab_set。父窗口是 withdraw 状态时，
+    # transient 子窗口可能永远不 map → 用户看到的是"双击没反应"（踩过）。
+    win.deiconify()
+    win.lift()
+    try:
+        win.attributes("-topmost", True)
+        win.after(400, lambda: win.attributes("-topmost", False))
+    except Exception:
+        pass
 
     tk.Label(win, text="先填这几项（以后都能改）", bg=C["bg"], fg=C["text"],
              font=F["title"]).pack(anchor="w", padx=18, pady=(14, 2))
