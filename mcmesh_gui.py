@@ -435,6 +435,18 @@ def run_gui() -> None:
     root.geometry(f"{W}x{H}+{px(48)}+{px(36)}")
     root.minsize(min(px(820), W), min(px(560), H))
 
+    # 窗口图标（打包后 icon.ico 在 _MEIPASS 里；源码方式运行时在程序目录）
+    try:
+        base = getattr(sys, "_MEIPASS", None)
+        cands = ([Path(base) / "icon.ico"] if base else []) + [
+            APP_DIR / "icon.ico", core.TOOL_DIR / "icon.ico"]
+        for cand in cands:
+            if cand.is_file():
+                root.iconbitmap(default=str(cand))
+                break
+    except Exception:
+        pass
+
     # 主题：clam 更好改色
     style = ttk.Style(root)
     try:
