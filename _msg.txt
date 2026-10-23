@@ -1,0 +1,10 @@
+feat(mod): feature parity pass - more screen, character switch, id, doctor, export/import
+
+- ConsoleScreen base class: shared output pane + command runner UI
+- MoreScreen: edit my id (writes ~/.mcmesh/config.json), doctor, export to / import from
+  Desktop/MCMesh存档, open backups folder, open the MCMesh window
+- CharScreen: lists repo/chars/*.dat and runs `chars --use <name>`
+- Store: reads config.json / players.json / chars with Gson
+- Runner: generic arg runner + openGui(); Action gains DOCTOR/EXPORT/IMPORT
+
+mod still NOT installed in the modpack (see mod/TODO.md)

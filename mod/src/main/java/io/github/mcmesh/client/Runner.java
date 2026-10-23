@@ -18,18 +18,21 @@ import java.util.function.Consumer;
  */
 public final class Runner {
 
+    /** 面板上的快捷动作。 */
     public enum Action {
-        PULL("pull", "拉取存档"),
-        PUSH("push", "上传存档"),
-        FIX("fix", "修复成就/权限"),
-        DOCTOR("doctor", "体检");
+        PULL("拉取存档", "pull"),
+        PUSH("上传存档", "push"),
+        FIX("修复成就/权限", "fix"),
+        DOCTOR("体检", "doctor"),
+        EXPORT("导出到文件夹", "push", "--to", ""),
+        IMPORT("从文件夹导入", "pull", "--from", "");
 
-        public final String arg;
         public final String label;
+        public final List<String> args;
 
-        Action(String arg, String label) {
-            this.arg = arg;
+        Action(String label, String... args) {
             this.label = label;
+            this.args = List.of(args);
         }
     }
 
@@ -64,7 +67,6 @@ public final class Runner {
         };
         for (String p : scripts) {
             if (new File(p).isFile()) {
-                // 优先 py 启动器，其次 python
                 String py = new File("C:\\Windows\\py.exe").isFile() ? "py" : "python";
                 return List.of(py, "-3", p);
             }
@@ -77,13 +79,46 @@ public final class Runner {
         return cmd == null ? "（没找到 MCMesh.exe）" : String.join(" ", cmd);
     }
 
-    /**
-     * 在后台跑一条命令。回调都在后台线程里调用，调用方自己切回主线程。
-     *
-     * @param onLines 新输出的行（可能被多次调用）
-     * @param onDone  结束时调用，参数是退出码（-1 表示启动失败）
-     */
+    /** 打开 MCMesh 的窗口界面（等于双击 exe）。 */
+    public static boolean openGui() {
+        List<String> cmd = resolve();
+        if (cmd == null) {
+            return false;
+        }
+        try {
+            // 如果是 py 启动器，去掉 -3 script，只留 python 可执行文件跑 GUI 不合适；
+            // 这种情况就直接跑 exe —— 找不到就返回 false。
+            String exe = cmd.get(cmd.size() - 1).toLowerCase(Locale.ROOT).endsWith(".exe")
+                    ? cmd.get(cmd.size() - 1) : null;
+            if (exe == null) {
+                return false;
+            }
+            new ProcessBuilder(exe).directory(new File(System.getProperty("user.home"))).start();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     public static void run(Action action, Consumer<List<String>> onLines, Consumer<Integer> onDone) {
+        List<String> args = new ArrayList<>(action.args);
+        if (action == Action.EXPORT || action == Action.IMPORT) {
+            // 这两个要带一个文件夹参数（默认「桌面\MCMesh存档」）
+            String dir = Store.exportDir().toString();
+            if (action == Action.EXPORT) {
+                try {
+                    Files.createDirectories(Store.exportDir());
+                } catch (IOException ignored) {
+                    // 建不成就让 mcmesh 自己报错
+                }
+            }
+            args.set(args.size() - 1, dir);
+        }
+        runArgs(action.label, args, onLines, onDone);
+    }
+
+    public static void runArgs(String label, List<String> args,
+                               Consumer<List<String>> onLines, Consumer<Integer> onDone) {
         Thread t = new Thread(() -> {
             List<String> cmd = resolve();
             if (cmd == null) {
@@ -97,10 +132,10 @@ public final class Runner {
                 Files.createDirectories(log.getParent());
                 Files.writeString(log, "", StandardCharsets.UTF_8);
             } catch (IOException ignored) {
-                // 日志清不掉就算了，后面按偏移读
+                // 清不掉就按偏移读
             }
             List<String> full = new ArrayList<>(cmd);
-            full.add(action.arg);
+            full.addAll(args);
             ProcessBuilder pb = new ProcessBuilder(full);
             pb.directory(new File(System.getProperty("user.home")));
             pb.redirectErrorStream(true);
@@ -145,7 +180,6 @@ public final class Runner {
                 return offset;
             }
             String text = new String(buf, 0, n, StandardCharsets.UTF_8);
-            // 只处理完整行
             int cut = text.lastIndexOf('\n');
             if (cut < 0) {
                 return offset;
