@@ -16,6 +16,7 @@ import os
 import queue
 import sys
 import threading
+import time
 import traceback
 from pathlib import Path
 
@@ -372,6 +373,18 @@ def setup_wizard(parent) -> dict | None:
         except BaseException as e:
             messagebox.showerror("配置失败", f"{e}\n\n可以再检查一下路径和仓库地址。", parent=win)
             return
+        if not core.CONFIG_PATH.exists():
+            messagebox.showerror(
+                "没存下来",
+                f"配置没写进：{core.CONFIG_PATH}\n"
+                "（可能这个位置没有写权限）", parent=win)
+            return
+        messagebox.showinfo(
+            "存好了",
+            f"配置已保存到：\n{core.CONFIG_PATH}\n\n"
+            "以后打开就不会再问你这些了。\n"
+            "（想改：窗口右上角「我的 ID ✎」或「更多 → 配置文件在哪」）",
+            parent=win)
         win.destroy()
 
     def cancel() -> None:
@@ -382,7 +395,14 @@ def setup_wizard(parent) -> dict | None:
     _make_button(bar, "保存并继续", save, "primary").pack(side="left")
     _make_button(bar, "取消", cancel, "ghost").pack(side="left", padx=8)
     e_name.focus_set()
-    win.grab_set()
+    win.focus_force()
+    # 测试用：MCMESH_WIZARD_AUTOFILL=1 时自动填好并保存（无人值守验证用）
+    if os.environ.get("MCMESH_WIZARD_AUTOFILL"):
+        vars_["player"].set(os.environ.get("MCMESH_AUTOFILL_PLAYER", "autotest"))
+        vars_["instance"].set(os.environ.get("MCMESH_AUTOFILL_INSTANCE", ""))
+        vars_["world"].set(os.environ.get("MCMESH_AUTOFILL_WORLD", "自动测试世界"))
+        vars_["repo_url"].set("")
+        win.after(1000, save)
     parent.wait_window(win)
     return out["cfg"]
 
@@ -433,6 +453,12 @@ def run_gui() -> None:
     root.option_add("*TCombobox*Listbox.selectBackground", C["accent"])
     root.option_add("*TCombobox*Listbox.selectForeground", C["accent_text"])
 
+    try:
+        with open(APP_DIR / "gui-startup.txt", "a", encoding="utf-8") as f:
+            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] 启动 cfg={core.CONFIG_PATH} "
+                    f"存在={core.CONFIG_PATH.exists()} exe={sys.executable}\n")
+    except Exception:
+        pass
     if not cfg:
         # 第一次用（或 exe 版没有黑框）：直接在窗口里填配置表
         cfg = setup_wizard(root)

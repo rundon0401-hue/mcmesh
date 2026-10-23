@@ -47,9 +47,24 @@ def app_dir() -> Path:
     return Path(__file__).resolve().parent
 
 
+def data_dir() -> Path:
+    r"""配置/状态放这儿：%USERPROFILE%\.mcmesh —— 不跟 exe 走。
+
+    为什么：exe 可能被放在只读目录、或者在压缩包里直接双击（会临时解包到 %TEMP%），
+    "存在 exe 旁边"的配置下次就找不到了 —— 用户会看到"每次都要重新填"。
+    """
+    d = Path.home() / ".mcmesh"
+    try:
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+    except OSError:
+        return TOOL_DIR
+
+
 TOOL_DIR = app_dir()
-CONFIG_PATH = TOOL_DIR / "config.json"
-STATE_PATH = TOOL_DIR / "state.json"
+DATA_DIR = data_dir()
+CONFIG_PATH = DATA_DIR / "config.json"
+STATE_PATH = DATA_DIR / "state.json"
 BACKUP_DIR = TOOL_DIR / "backups"
 FABRIC_META = "https://meta.fabricmc.net/v2"
 
@@ -164,13 +179,24 @@ def ask_yes(prompt: str, default: bool = True) -> bool:
 # ────────────────────────────────────────────────── 配置与状态
 
 def load_cfg(required: bool = True):
-    if not CONFIG_PATH.exists():
+    r"""读配置：先看 %USERPROFILE%\.mcmesh\config.json，再看 exe 旁边的老位置（自动迁移）。"""
+    path = None
+    for cand in (CONFIG_PATH, TOOL_DIR / "config.json"):
+        if cand.exists():
+            path = cand
+            break
+    if path is None:
         if required:
             die("还没有配置过。先运行：python mcmesh.py init")
         return None
-    cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8-sig"))
+    cfg = json.loads(path.read_text(encoding="utf-8-sig"))
     for k, v in DEFAULT_CONFIG.items():
         cfg.setdefault(k, v)
+    if path != CONFIG_PATH:                  # 老位置 → 迁到新位置
+        try:
+            CONFIG_PATH.write_text(path.read_text(encoding="utf-8-sig"), encoding="utf-8")
+        except OSError:
+            pass
     return cfg
 
 
@@ -179,11 +205,19 @@ def save_cfg(cfg) -> None:
 
 
 def load_state() -> dict:
-    if STATE_PATH.exists():
-        try:
-            return json.loads(STATE_PATH.read_text(encoding="utf-8-sig"))
-        except Exception:
-            pass
+    for cand in (STATE_PATH, TOOL_DIR / "state.json"):
+        if cand.exists():
+            try:
+                st = json.loads(cand.read_text(encoding="utf-8-sig"))
+            except Exception:
+                continue
+            if cand != STATE_PATH:
+                try:
+                    STATE_PATH.write_text(cand.read_text(encoding="utf-8-sig"),
+                                          encoding="utf-8")
+                except OSError:
+                    pass
+            return st
     return {}
 
 
