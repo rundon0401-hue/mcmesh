@@ -65,7 +65,7 @@ TOOL_DIR = app_dir()
 DATA_DIR = data_dir()
 CONFIG_PATH = DATA_DIR / "config.json"
 STATE_PATH = DATA_DIR / "state.json"
-BACKUP_DIR = TOOL_DIR / "backups"
+BACKUP_DIR = DATA_DIR / "backups"          # 备份也放用户目录，桌面/程序目录保持干净
 FABRIC_META = "https://meta.fabricmc.net/v2"
 
 # 这些文件不属于"世界内容"，同步时跳过
@@ -226,7 +226,16 @@ def save_state(st: dict) -> None:
 
 
 def repo_dir(cfg) -> Path:
-    return Path(cfg["work_dir"]) if cfg.get("work_dir") else (TOOL_DIR / "repo")
+    if cfg.get("work_dir"):
+        return Path(cfg["work_dir"])
+    new = DATA_DIR / "repo"
+    old = TOOL_DIR / "repo"                 # 老位置：exe 旁边
+    if not new.exists() and old.exists():
+        try:
+            shutil.move(str(old), str(new))   # 自动搬家，数据不丢
+        except Exception:
+            return old
+    return new
 
 
 def instance_dir(cfg) -> Path:

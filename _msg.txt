@@ -1,0 +1,5 @@
+chore: move repo/ and backups/ into %USERPROFILE%\.mcmesh
+
+- keeps the folder that holds the exe clean (no repo/ or backups/ appearing on the Desktop)
+- repo_dir() migrates the old exe-side repo automatically (shutil.move), no data loss
+- BACKUP_DIR moved as well
