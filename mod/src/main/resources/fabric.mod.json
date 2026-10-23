@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "mcmesh",
+  "version": "${version}",
+  "name": "MCMesh Sync",
+  "description": "游戏内的联机存档助手：单人存档列表里多一个按钮，直接拉取 / 上传 / 修复成就与权限，不用切出去点 bat。",
+  "authors": [
+    "rundon0401-hue"
+  ],
+  "contact": {
+    "homepage": "https://github.com/rundon0401-hue/mcmesh",
+    "sources": "https://github.com/rundon0401-hue/mcmesh"
+  },
+  "license": "MIT",
+  "icon": "assets/mcmesh/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "io.github.mcmesh.client.McmeshClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
