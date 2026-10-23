@@ -1,0 +1,20 @@
+# local per-machine data (never commit)
+config.json
+state.json
+repo/
+backups/
+pending-switch.json
+switch-error.txt
+gui-*.txt
+
+# build artifacts
+dist/
+build/
+*.spec
+*.exe
+__pycache__/
+*.pyc
+
+# temp
+_import_tmp/
+*.log
