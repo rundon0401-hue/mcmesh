@@ -27,6 +27,8 @@ APP_DIR = (Path(sys.executable).resolve().parent
 
 import mcmesh as core  # noqa: E402
 
+LOG_DIR = core.DATA_DIR   # 日志/状态文件放用户目录，程序目录保持干净
+
 # ────────────────────────────────────────────────── 配色 / 字体
 C = {
     "bg": "#15181d",
@@ -454,7 +456,7 @@ def run_gui() -> None:
     root.option_add("*TCombobox*Listbox.selectForeground", C["accent_text"])
 
     try:
-        with open(APP_DIR / "gui-startup.txt", "a", encoding="utf-8") as f:
+        with open(LOG_DIR / "gui-startup.txt", "a", encoding="utf-8") as f:
             f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] 启动 cfg={core.CONFIG_PATH} "
                     f"存在={core.CONFIG_PATH.exists()} exe={sys.executable}\n")
     except Exception:
@@ -490,7 +492,7 @@ def run_gui() -> None:
     except Exception:
         pass
     try:
-        with open(APP_DIR / "gui-startup.txt", "a",
+        with open(LOG_DIR / "gui-startup.txt", "a",
                   encoding="utf-8") as f:
             f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] 启动 build="
                     f"{time.strftime('%m%d-%H%M', time.localtime(CODE_MTIME))}\n")
@@ -897,7 +899,7 @@ def run_gui() -> None:
                       if str(c.cget("highlightbackground")) == C["border_sel"]]
                 txt = detail.get("1.0", "end").strip()
                 try:
-                    (APP_DIR / "gui-probe.txt").write_text(
+                    (LOG_DIR / "gui-probe.txt").write_text(
                         f"clicked_index={idx}\nhighlighted={hl}\n"
                         f"expected={chars[idx]['ident']}\n"
                         f"detail_has_items={'【' in txt}\n--- detail ---\n{txt}\n",
@@ -994,7 +996,7 @@ def run_gui() -> None:
         if notify and procs:
             try:
                 import datetime
-                with open(APP_DIR / "switch-error.txt", "a",
+                with open(LOG_DIR / "switch-error.txt", "a",
                           encoding="utf-8") as f:
                     f.write(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] "
                             f"游戏仍在运行：{procs}\n")
@@ -1002,7 +1004,7 @@ def run_gui() -> None:
                 pass
         return bool(procs)
 
-    PENDING_PATH = APP_DIR / "pending-switch.json"
+    PENDING_PATH = LOG_DIR / "pending-switch.json"
 
     def load_pending():
         try:
@@ -1147,7 +1149,7 @@ def run_gui() -> None:
         set_status(msg)
         try:                       # 失败原因落盘，方便事后排查
             import datetime
-            with open(APP_DIR / "switch-error.txt", "a",
+            with open(LOG_DIR / "switch-error.txt", "a",
                       encoding="utf-8") as f:
                 f.write(f"[{datetime.datetime.now():%Y-%m-%d %H:%M:%S}] {msg}\n")
         except Exception:
@@ -1390,7 +1392,7 @@ def run_gui() -> None:
     root.update_idletasks()
     tick()
     try:
-        (APP_DIR / "gui-diag.txt").write_text(
+        (LOG_DIR / "gui-diag.txt").write_text(
             f"screen={root.winfo_screenwidth()}x{root.winfo_screenheight()}  "
             f"win={root.winfo_width()}x{root.winfo_height()}  "
             f"at={root.winfo_rootx()},{root.winfo_rooty()}  scale={SC}\n",
@@ -1431,7 +1433,7 @@ def main() -> None:
         run_gui()
     except Exception:
         try:
-            (APP_DIR / "gui-error.txt").write_text(
+            (LOG_DIR / "gui-error.txt").write_text(
                 traceback.format_exc(), encoding="utf-8")
         except Exception:
             pass
